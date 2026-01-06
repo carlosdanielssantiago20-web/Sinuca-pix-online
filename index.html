@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinuca Pix Online</title>
+
+<style>
+body {
+  margin: 0;
+  background: radial-gradient(circle at top, #0f5132, #062e1c);
+  color: #ffffff;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+h1 {
+  margin-top: 16px;
+}
+canvas {
+  background: #1f7a4a;
+  margin-top: 20px;
+  border-radius: 12px;
+  box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+button {
+  padding: 12px 22px;
+  margin: 10px;
+  font-size: 16px;
+  border: none;
+  border-radius: 8px;
+  background: #ffd700;
+  color: #000;
+  font-weight: bold;
+}
+.footer {
+  margin-top: 20px;
+  font-size: 12px;
+  opacity: 0.8;
+}
+</style>
+</head>
+
+<body>
+<h1>🎱 Sinuca Pix Online</h1>
+<p>Versão Web – Protótipo Oficial</p>
+
+<canvas id="game" width="360" height="200"></canvas>
+
+<br>
+<button onclick="alert('Modo online em desenvolvimento')">Jogar Online</button>
+<button onclick="alert('Sistema Pix será integrado')">Comprar Fichas</button>
+
+<div class="footer">
+© 2026 - Carlos Daniel Souza Santiago<br>
+Todos os direitos reservados
+</div>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+function drawTable() {
+  ctx.fillStyle = "#145a32";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  ctx.strokeStyle = "#0b3d2e";
+  ctx.lineWidth = 10;
+  ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+
+  ctx.fillStyle = "#ffffff";
+  ctx.beginPath();
+  ctx.arc(180, 100, 8, 0, Math.PI * 2);
+  ctx.fill();
+
+  ctx.font = "16px Arial";
+  ctx.fillText("Mesa de Sinuca", 120, 30);
+}
+
+drawTable();
+</script>
+</body>
+</html>
