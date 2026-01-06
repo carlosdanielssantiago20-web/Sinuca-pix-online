@@ -1,82 +1,128 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sinuca Pix Online</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sinuca Pix Online</title>
 
-<style>
-body {
-  margin: 0;
-  background: radial-gradient(circle at top, #0f5132, #062e1c);
-  color: #ffffff;
-  font-family: Arial, sans-serif;
-  text-align: center;
-}
-h1 {
-  margin-top: 16px;
-}
-canvas {
-  background: #1f7a4a;
-  margin-top: 20px;
-  border-radius: 12px;
-  box-shadow: 0 0 20px rgba(0,0,0,0.5);
-}
-button {
-  padding: 12px 22px;
-  margin: 10px;
-  font-size: 16px;
-  border: none;
-  border-radius: 8px;
-  background: #ffd700;
-  color: #000;
-  font-weight: bold;
-}
-.footer {
-  margin-top: 20px;
-  font-size: 12px;
-  opacity: 0.8;
-}
-</style>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: linear-gradient(180deg, #0b4f2f, #063a23);
+      color: #ffffff;
+      text-align: center;
+    }
+
+    h1 {
+      margin-top: 20px;
+      font-size: 28px;
+    }
+
+    h2 {
+      font-size: 16px;
+      font-weight: normal;
+      margin-bottom: 20px;
+      opacity: 0.9;
+    }
+
+    .mesa-container {
+      margin: 20px auto;
+      width: 360px;
+      background: #0d5c38;
+      padding: 10px;
+      border-radius: 12px;
+      box-shadow: 0 0 15px rgba(0,0,0,0.4);
+    }
+
+    canvas {
+      background: #145a32;
+      border: 8px solid #0b3d2e;
+      border-radius: 10px;
+    }
+
+    .botoes {
+      margin-top: 20px;
+    }
+
+    button {
+      background: #f1c40f;
+      border: none;
+      padding: 15px 25px;
+      margin: 10px;
+      font-size: 16px;
+      font-weight: bold;
+      border-radius: 8px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background: #d4ac0d;
+    }
+
+    .footer {
+      margin-top: 30px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+  </style>
 </head>
 
 <body>
-<h1>🎱 Sinuca Pix Online</h1>
-<p>Versão Web – Protótipo Oficial</p>
 
-<canvas id="game" width="360" height="200"></canvas>
+  <h1>🎱 Sinuca Pix Online</h1>
+  <h2>Versão Web – Protótipo Oficial</h2>
 
-<br>
-<button onclick="alert('Modo online em desenvolvimento')">Jogar Online</button>
-<button onclick="alert('Sistema Pix será integrado')">Comprar Fichas</button>
+  <div class="mesa-container">
+    <canvas id="mesa" width="340" height="180"></canvas>
+  </div>
 
-<div class="footer">
-© 2026 - Carlos Daniel Souza Santiago<br>
-Todos os direitos reservados
-</div>
+  <div class="botoes">
+    <button onclick="jogarOnline()">Jogar Online</button>
+    <button onclick="comprarFichas()">Comprar Fichas</button>
+  </div>
 
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+  <div class="footer">
+    © 2026 - Carlos Daniel Souza Santiago<br>
+    Todos os direitos reservados
+  </div>
 
-function drawTable() {
-  ctx.fillStyle = "#145a32";
-  ctx.fillRect(0, 0, canvas.width, canvas.height);
+  <script>
+    const canvas = document.getElementById("mesa");
+    const ctx = canvas.getContext("2d");
 
-  ctx.strokeStyle = "#0b3d2e";
-  ctx.lineWidth = 10;
-  ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+    function desenharMesa() {
+      // Fundo
+      ctx.fillStyle = "#145a32";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-  ctx.fillStyle = "#ffffff";
-  ctx.beginPath();
-  ctx.arc(180, 100, 8, 0, Math.PI * 2);
-  ctx.fill();
+      // Borda
+      ctx.strokeStyle = "#0b3d2e";
+      ctx.lineWidth = 10;
+      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
 
-  ctx.font = "16px Arial";
-  ctx.fillText("Mesa de Sinuca", 120, 30);
-}
+      // Bola branca
+      ctx.fillStyle = "#ffffff";
+      ctx.beginPath();
+      ctx.arc(canvas.width / 2, canvas.height / 2, 8, 0, Math.PI * 2);
+      ctx.fill();
 
-drawTable();
-</script>
+      // Texto
+      ctx.fillStyle = "#ffffff";
+      ctx.font = "16px Arial";
+      ctx.fillText("Mesa de Sinuca", 105, 25);
+    }
+
+    function jogarOnline() {
+      alert("Modo online ainda em desenvolvimento 🚧");
+    }
+
+    function comprarFichas() {
+      alert("Sistema Pix em desenvolvimento 💰");
+    }
+
+    desenharMesa();
+  </script>
+
 </body>
 </html>
