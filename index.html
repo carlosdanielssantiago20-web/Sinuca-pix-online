@@ -4,7 +4,6 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sinuca Pix Online</title>
-
 <style>
 body{
   margin:0;
@@ -26,169 +25,159 @@ canvas{
 <canvas id="game" width="360" height="640"></canvas>
 
 <script>
-// ===== CANVAS =====
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
+const canvas=document.getElementById("game");
+const ctx=canvas.getContext("2d");
 
-// ===== MESA =====
-const table = { left:30, right:330, top:30, bottom:610 };
+const table={left:30,right:330,top:30,bottom:610};
 
-// ===== CAÇAPAS =====
-const pockets = [
-  {x:30,y:30},{x:180,y:30},{x:330,y:30},
-  {x:30,y:610},{x:180,y:610},{x:330,y:610}
+// CAÇAPAS CORRETAS
+const pockets=[
+ {x:30,y:30},
+ {x:180,y:30},
+ {x:330,y:30},
+ {x:30,y:610},
+ {x:180,y:610},
+ {x:330,y:610}
 ];
 
-// ===== CONTROLE =====
 let pointer={x:0,y:0};
 let aiming=false;
 let turno="player";
 
-// ===== BOLAS =====
 const balls=[];
-function createBall(x,y,color){
-  return {x,y,r:10,vx:0,vy:0,color};
+function ball(x,y,color){
+ return{x,y,r:10,vx:0,vy:0,color};
 }
 
-// bola branca
-const cueBall=createBall(180,500,"#fff");
+const cueBall=ball(180,500,"#fff");
 balls.push(cueBall);
 
-// bolas coloridas
 const colors=["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
 let sx=180-55;
-for(let i=0;i<6;i++){
-  balls.push(createBall(sx+i*22,150,colors[i]));
-}
+for(let i=0;i<6;i++) balls.push(ball(sx+i*22,160,colors[i]));
 
-// ===== INPUT =====
+// INPUT
 function setPointer(e){
-  const r=canvas.getBoundingClientRect();
-  const t=e.touches?e.touches[0]:e;
-  pointer.x=t.clientX-r.left;
-  pointer.y=t.clientY-r.top;
+ const r=canvas.getBoundingClientRect();
+ const t=e.touches?e.touches[0]:e;
+ pointer.x=t.clientX-r.left;
+ pointer.y=t.clientY-r.top;
 }
-
-canvas.onmousedown=e=>{
-  if(turno==="player"&&ballsStopped()){setPointer(e);aiming=true;}
-};
+canvas.onmousedown=e=>{if(turno==="player"&&stopped()){setPointer(e);aiming=true;}};
 canvas.onmousemove=e=>{if(aiming)setPointer(e);};
 canvas.onmouseup=()=>shoot();
-
-canvas.ontouchstart=e=>{
-  if(turno==="player"&&ballsStopped()){setPointer(e);aiming=true;}
-};
+canvas.ontouchstart=e=>{if(turno==="player"&&stopped()){setPointer(e);aiming=true;}};
 canvas.ontouchmove=e=>{if(aiming)setPointer(e);};
 canvas.ontouchend=()=>shoot();
 
 function shoot(){
-  if(!aiming)return;
-  const dx=cueBall.x-pointer.x;
-  const dy=cueBall.y-pointer.y;
-  const d=Math.min(Math.hypot(dx,dy),120);
-  cueBall.vx=(dx/d)*5;
-  cueBall.vy=(dy/d)*5;
-  aiming=false;
-  turno="ia";
+ if(!aiming)return;
+ const dx=cueBall.x-pointer.x;
+ const dy=cueBall.y-pointer.y;
+ const d=Math.min(Math.hypot(dx,dy),120);
+ cueBall.vx=(dx/d)*5;
+ cueBall.vy=(dy/d)*5;
+ aiming=false;
+ turno="ia";
 }
 
-// ===== IA =====
+// IA MELHORADA (LINHA + CAÇAPA)
 function iaPlay(){
-  let alvo=null,pocket=null,score=Infinity;
+ let best=null;
 
-  for(let i=1;i<balls.length;i++){
-    if(balls[i].x<0)continue;
-    pockets.forEach(p=>{
-      let s=Math.hypot(cueBall.x-balls[i].x,cueBall.y-balls[i].y)+
-            Math.hypot(balls[i].x-p.x,balls[i].y-p.y);
-      if(s<score){score=s;alvo=balls[i];pocket=p;}
-    });
-  }
-  if(!alvo)return;
-
-  const dx=cueBall.x-alvo.x;
-  const dy=cueBall.y-alvo.y;
-  const d=Math.hypot(dx,dy);
-  cueBall.vx=(dx/d)*4;
-  cueBall.vy=(dy/d)*4;
-}
-
-// ===== FÍSICA =====
-function ballsStopped(){
-  return balls.every(b=>Math.hypot(b.vx,b.vy)<0.05);
-}
-
-function collision(a,b){
-  const dx=b.x-a.x,dy=b.y-a.y;
-  const dist=Math.hypot(dx,dy);
-  if(dist<a.r+b.r){
-    const nx=dx/dist,ny=dy/dist;
-    const p=(a.vx*nx+a.vy*ny-b.vx*nx-b.vy*ny);
-    a.vx-=p*nx; a.vy-=p*ny;
-    b.vx+=p*nx; b.vy+=p*ny;
-  }
-}
-
-// ===== DESENHO =====
-function drawBall(b){
-  ctx.beginPath();
-  ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-  ctx.fillStyle=b.color;
-  ctx.fill();
-}
-
-// ===== LOOP =====
-function update(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  // mesa
-  ctx.strokeStyle="#2b1b0f";
-  ctx.lineWidth=20;
-  ctx.strokeRect(20,20,320,600);
-
-  // caçapas
+ balls.slice(1).forEach(b=>{
+  if(b.x<0)return;
   pockets.forEach(p=>{
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,16,0,Math.PI*2);
-    ctx.fillStyle="#000";
-    ctx.fill();
+   const v1={x:b.x-cueBall.x,y:b.y-cueBall.y};
+   const v2={x:p.x-b.x,y:p.y-b.y};
+   const dot=v1.x*v2.x+v1.y*v2.y;
+   if(dot>0){
+    const score=Math.hypot(v1.x,v1.y)+Math.hypot(v2.x,v2.y);
+    if(!best||score<best.score){
+     best={b,score};
+    }
+   }
   });
+ });
 
-  balls.forEach(b=>{
-    b.x+=b.vx; b.y+=b.vy;
-    b.vx*=0.98; b.vy*=0.98;
+ if(!best){turno="player";return;}
 
-    if(b.x-b.r<table.left||b.x+b.r>table.right) b.vx*=-1;
-    if(b.y-b.r<table.top||b.y+b.r>table.bottom) b.vy*=-1;
+ const dx=cueBall.x-best.b.x;
+ const dy=cueBall.y-best.b.y;
+ const d=Math.hypot(dx,dy);
+ cueBall.vx=(dx/d)*4;
+ cueBall.vy=(dy/d)*4;
+}
 
-    pockets.forEach(p=>{
-      if(Math.hypot(b.x-p.x,b.y-p.y)<14){
-        b.x=-100; b.y=-100; b.vx=0; b.vy=0;
-      }
-    });
+// FÍSICA
+function stopped(){return balls.every(b=>Math.hypot(b.vx,b.vy)<0.05);}
+function collision(a,b){
+ const dx=b.x-a.x,dy=b.y-a.y,d=Math.hypot(dx,dy);
+ if(d<a.r+b.r){
+  const nx=dx/d,ny=dy/d;
+  const p=(a.vx*nx+a.vy*ny-b.vx*nx-b.vy*ny);
+  a.vx-=p*nx; a.vy-=p*ny;
+  b.vx+=p*nx; b.vy+=p*ny;
+ }
+}
+
+// LOOP
+function drawBall(b){
+ ctx.beginPath();
+ ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+ ctx.fillStyle=b.color;
+ ctx.fill();
+}
+
+function update(){
+ ctx.clearRect(0,0,canvas.width,canvas.height);
+
+ ctx.strokeStyle="#2b1b0f";
+ ctx.lineWidth=20;
+ ctx.strokeRect(20,20,320,600);
+
+ pockets.forEach(p=>{
+  ctx.beginPath();
+  ctx.arc(p.x,p.y,16,0,Math.PI*2);
+  ctx.fillStyle="#000";
+  ctx.fill();
+ });
+
+ balls.forEach(b=>{
+  b.x+=b.vx; b.y+=b.vy;
+  b.vx*=0.98; b.vy*=0.98;
+
+  if(b.x-b.r<table.left||b.x+b.r>table.right)b.vx*=-1;
+  if(b.y-b.r<table.top||b.y+b.r>table.bottom)b.vy*=-1;
+
+  pockets.forEach(p=>{
+   if(Math.hypot(b.x-p.x,b.y-p.y)<14){
+    b.x=-100; b.y=-100; b.vx=b.vy=0;
+   }
   });
+ });
 
-  for(let i=0;i<balls.length;i++)
-    for(let j=i+1;j<balls.length;j++)
-      collision(balls[i],balls[j]);
+ for(let i=0;i<balls.length;i++)
+  for(let j=i+1;j<balls.length;j++)
+   collision(balls[i],balls[j]);
 
-  balls.forEach(drawBall);
+ balls.forEach(drawBall);
 
-  if(aiming){
-    ctx.setLineDash([8,8]);
-    ctx.strokeStyle="#fff";
-    ctx.beginPath();
-    ctx.moveTo(cueBall.x,cueBall.y);
-    ctx.lineTo(pointer.x,pointer.y);
-    ctx.stroke();
-    ctx.setLineDash([]);
-  }
+ if(aiming){
+  ctx.setLineDash([8,8]);
+  ctx.strokeStyle="#fff";
+  ctx.beginPath();
+  ctx.moveTo(cueBall.x,cueBall.y);
+  ctx.lineTo(pointer.x,pointer.y);
+  ctx.stroke();
+  ctx.setLineDash([]);
+ }
 
-  if(turno==="ia"&&ballsStopped()){
-    setTimeout(()=>{iaPlay();turno="player";},700);
-  }
+ if(turno==="ia"&&stopped()){
+  setTimeout(()=>{iaPlay();turno="player";},700);
+ }
 
-  requestAnimationFrame(update);
+ requestAnimationFrame(update);
 }
 update();
 </script>
