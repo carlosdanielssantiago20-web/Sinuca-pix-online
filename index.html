@@ -2,7 +2,9 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sinuca Pix Online</title>
+
 <style>
 body {
   margin: 0;
@@ -11,6 +13,7 @@ body {
   justify-content: center;
   align-items: center;
   height: 100vh;
+  touch-action: none;
 }
 
 canvas {
@@ -38,8 +41,10 @@ const table = {
   bottom: canvas.height - 30
 };
 
-let mouse = {x:0,y:0};
+let pointer = { x: 0, y: 0 };
 let shooting = false;
+
+const balls = [];
 
 const cueBall = {
   x: canvas.width / 2,
@@ -49,107 +54,114 @@ const cueBall = {
   vy: 0,
   color: "#ffffff"
 };
+balls.push(cueBall);
 
-const balls = [cueBall];
+// bolas alvo
+const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
+let startX = canvas.width / 2 - 55;
+let startY = 120;
 
-function createBalls() {
-  const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
-  let startX = canvas.width/2 - 30;
-  let startY = 120;
+colors.forEach((c, i) => {
+  balls.push({
+    x: startX + i * 22,
+    y: startY,
+    r: 10,
+    vx: 0,
+    vy: 0,
+    color: c
+  });
+});
 
-  for(let i=0;i<6;i++){
-    balls.push({
-      x: startX + i*22,
-      y: startY,
-      r: 10,
-      vx: 0,
-      vy: 0,
-      color: colors[i]
-    });
-  }
-}
-createBalls();
-
-canvas.addEventListener("mousemove", e=>{
+// eventos touch + mouse
+function setPointer(e) {
   const rect = canvas.getBoundingClientRect();
-  mouse.x = e.clientX - rect.left;
-  mouse.y = e.clientY - rect.top;
+  const t = e.touches ? e.touches[0] : e;
+  pointer.x = t.clientX - rect.left;
+  pointer.y = t.clientY - rect.top;
+}
+
+canvas.addEventListener("mousedown", e => {
+  setPointer(e);
+  if (Math.hypot(cueBall.vx, cueBall.vy) < 0.05) shooting = true;
 });
 
-canvas.addEventListener("mousedown", ()=>{
-  if(Math.hypot(cueBall.vx, cueBall.vy) < 0.1){
-    shooting = true;
-  }
+canvas.addEventListener("mousemove", setPointer);
+canvas.addEventListener("mouseup", () => shoot());
+
+canvas.addEventListener("touchstart", e => {
+  setPointer(e);
+  if (Math.hypot(cueBall.vx, cueBall.vy) < 0.05) shooting = true;
 });
 
-canvas.addEventListener("mouseup", ()=>{
-  if(shooting){
-    cueBall.vx = (cueBall.x - mouse.x) * 0.05;
-    cueBall.vy = (cueBall.y - mouse.y) * 0.05;
-    shooting = false;
-  }
-});
+canvas.addEventListener("touchmove", setPointer);
+canvas.addEventListener("touchend", () => shoot());
 
-function drawBall(ball){
+function shoot() {
+  if (!shooting) return;
+  cueBall.vx = (cueBall.x - pointer.x) * 0.05;
+  cueBall.vy = (cueBall.y - pointer.y) * 0.05;
+  shooting = false;
+}
+
+function drawBall(b) {
   // sombra
   ctx.beginPath();
-  ctx.arc(ball.x+4, ball.y+6, ball.r, 0, Math.PI*2);
+  ctx.arc(b.x + 3, b.y + 4, b.r, 0, Math.PI * 2);
   ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.fill();
 
   // brilho
   const g = ctx.createRadialGradient(
-    ball.x-4, ball.y-4, ball.r*0.2,
-    ball.x, ball.y, ball.r
+    b.x - 4, b.y - 4, 2,
+    b.x, b.y, b.r
   );
-  g.addColorStop(0,"#fff");
-  g.addColorStop(0.3,ball.color);
-  g.addColorStop(1,"#000");
+  g.addColorStop(0, "#fff");
+  g.addColorStop(0.4, b.color);
+  g.addColorStop(1, "#000");
 
   ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+  ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
   ctx.fillStyle = g;
   ctx.fill();
 }
 
-function update(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
+function update() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-  // mesa interna
+  // mesa
   ctx.strokeStyle = "#2b1b0f";
   ctx.lineWidth = 20;
   ctx.strokeRect(
-    table.left-10,
-    table.top-10,
-    table.right-table.left+20,
-    table.bottom-table.top+20
+    table.left - 10,
+    table.top - 10,
+    table.right - table.left + 20,
+    table.bottom - table.top + 20
   );
 
-  balls.forEach(ball=>{
-    ball.x += ball.vx;
-    ball.y += ball.vy;
+  balls.forEach(b => {
+    b.x += b.vx;
+    b.y += b.vy;
 
-    ball.vx *= 0.99;
-    ball.vy *= 0.99;
+    b.vx *= 0.98;
+    b.vy *= 0.98;
 
-    if(ball.x-ball.r < table.left || ball.x+ball.r > table.right){
-      ball.vx *= -1;
-    }
-    if(ball.y-ball.r < table.top || ball.y+ball.r > table.bottom){
-      ball.vy *= -1;
-    }
+    if (Math.abs(b.vx) < 0.01) b.vx = 0;
+    if (Math.abs(b.vy) < 0.01) b.vy = 0;
 
-    drawBall(ball);
+    if (b.x - b.r < table.left || b.x + b.r > table.right) b.vx *= -1;
+    if (b.y - b.r < table.top || b.y + b.r > table.bottom) b.vy *= -1;
+
+    drawBall(b);
   });
 
   // mira
-  if(shooting){
-    ctx.setLineDash([8,8]);
-    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+  if (shooting) {
+    ctx.setLineDash([8, 8]);
+    ctx.strokeStyle = "rgba(255,255,255,0.6)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cueBall.x, cueBall.y);
-    ctx.lineTo(mouse.x, mouse.y);
+    ctx.lineTo(pointer.x, pointer.y);
     ctx.stroke();
     ctx.setLineDash([]);
   }
