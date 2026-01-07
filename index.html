@@ -6,79 +6,13 @@
 <title>Sinuca Pix Online</title>
 
 <style>
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: Arial, sans-serif;
-}
-
-body {
-  background: #0b0b0b;
-  color: #fff;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  height: 100vh;
-}
-
-header {
-  width: 100%;
-  padding: 12px;
-  background: #111;
-  text-align: center;
-  font-size: 20px;
-  font-weight: bold;
-  color: #00ff88;
-}
-
-#status {
-  width: 100%;
-  display: flex;
-  justify-content: space-around;
-  padding: 10px;
-  background: #151515;
-  font-size: 14px;
-}
-
-#mesa-container {
-  flex: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-
-canvas {
-  background: #0f5f2f;
-  border: 10px solid #3a1f0f;
-  border-radius: 12px;
-  width: 95%;
-  max-width: 420px;
-  aspect-ratio: 2 / 1;
-}
-
-#controles {
-  width: 100%;
-  padding: 12px;
-  background: #111;
-  display: flex;
-  gap: 10px;
-}
-
-button {
-  flex: 1;
-  padding: 12px;
-  font-size: 16px;
-  border: none;
-  border-radius: 6px;
-  background: #00ff88;
-  color: #000;
-  font-weight: bold;
-}
-button:active {
-  transform: scale(0.97);
-}
+*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
+body{background:#0b0b0b;color:#fff;display:flex;flex-direction:column;height:100vh}
+header{background:#111;color:#00ff88;text-align:center;padding:12px;font-size:20px;font-weight:bold}
+#status{display:flex;justify-content:space-around;background:#151515;padding:8px;font-size:14px}
+#mesaBox{flex:1;display:flex;justify-content:center;align-items:center}
+canvas{background:#0f5f2f;border:10px solid #3a1f0f;border-radius:12px;width:95%;max-width:420px;aspect-ratio:2/1}
+#info{text-align:center;padding:8px;background:#111;font-size:14px}
 </style>
 </head>
 
@@ -87,73 +21,117 @@ button:active {
 <header>🎱 SINUCA PIX ONLINE</header>
 
 <div id="status">
-  <div>👤 Jogador: <span id="player">Convidado</span></div>
+  <div>👤 Jogador</div>
   <div>💰 Fichas: <span id="coins">100</span></div>
-  <div>🏆 Fase: <span id="level">1</span></div>
+  <div>🏆 Fase 1</div>
 </div>
 
-<div id="mesa-container">
+<div id="mesaBox">
   <canvas id="mesa" width="800" height="400"></canvas>
 </div>
 
-<div id="controles">
-  <button onclick="iniciarJogo()">Jogar</button>
-  <button onclick="novaFase()">Nova Fase</button>
-  <button onclick="resetar()">Reset</button>
-</div>
+<div id="info">Puxe o dedo para trás e solte para tacar</div>
 
 <script>
 const canvas = document.getElementById("mesa");
 const ctx = canvas.getContext("2d");
 
-// dados base
-let jogador = localStorage.getItem("player") || "Convidado";
-let fichas = Number(localStorage.getItem("coins")) || 100;
-let fase = Number(localStorage.getItem("level")) || 1;
+const friction = 0.99;
+const balls = [];
+const pockets = [
+  {x:0,y:0},{x:400,y:0},{x:800,y:0},
+  {x:0,y:400},{x:400,y:400},{x:800,y:400}
+];
 
-document.getElementById("player").innerText = jogador;
-document.getElementById("coins").innerText = fichas;
-document.getElementById("level").innerText = fase;
+function Ball(x,y,color){
+  this.x=x; this.y=y;
+  this.vx=0; this.vy=0;
+  this.r=10;
+  this.color=color;
+}
 
-// desenho inicial
-function desenharMesa() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+balls.push(new Ball(200,200,"white"));
+balls.push(new Ball(550,180,"yellow"));
+balls.push(new Ball(570,200,"blue"));
+balls.push(new Ball(550,220,"red"));
 
-  // buracos
-  ctx.fillStyle = "#000";
-  const buracos = [
-    [0,0],[400,0],[800,0],
-    [0,400],[400,400],[800,400]
-  ];
-  buracos.forEach(b=>{
+let aiming=false, ax=0, ay=0;
+canvas.addEventListener("touchstart",e=>{
+  aiming=true;
+  ax=e.touches[0].clientX;
+  ay=e.touches[0].clientY;
+});
+canvas.addEventListener("touchend",e=>{
+  if(!aiming)return;
+  aiming=false;
+  let dx=ax - balls[0].x;
+  let dy=ay - balls[0].y;
+  balls[0].vx += dx*0.03;
+  balls[0].vy += dy*0.03;
+});
+
+function update(){
+  balls.forEach(b=>{
+    b.x+=b.vx; b.y+=b.vy;
+    b.vx*=friction; b.vy*=friction;
+
+    if(b.x<b.r||b.x>800-b.r) b.vx*=-1;
+    if(b.y<b.r||b.y>400-b.r) b.vy*=-1;
+
+    pockets.forEach(p=>{
+      let d=Math.hypot(b.x-p.x,b.y-p.y);
+      if(d<18){ b.vx=b.vy=0; b.x=-100; }
+    });
+  });
+
+  for(let i=0;i<balls.length;i++){
+    for(let j=i+1;j<balls.length;j++){
+      let a=balls[i], b=balls[j];
+      let dx=b.x-a.x, dy=b.y-a.y;
+      let dist=Math.hypot(dx,dy);
+      if(dist<a.r+b.r){
+        let nx=dx/dist, ny=dy/dist;
+        let p=2*(a.vx*nx+a.vy*ny-b.vx*nx-b.vy*ny)/2;
+        a.vx-=p*nx; a.vy-=p*ny;
+        b.vx+=p*nx; b.vy+=p*ny;
+      }
+    }
+  }
+}
+
+function draw(){
+  ctx.clearRect(0,0,800,400);
+
+  pockets.forEach(p=>{
+    ctx.fillStyle="#000";
     ctx.beginPath();
-    ctx.arc(b[0], b[1], 18, 0, Math.PI*2);
+    ctx.arc(p.x,p.y,18,0,Math.PI*2);
     ctx.fill();
   });
 
-  // bola branca
-  ctx.fillStyle = "#fff";
-  ctx.beginPath();
-  ctx.arc(200, 200, 10, 0, Math.PI*2);
-  ctx.fill();
+  balls.forEach(b=>{
+    if(b.x<0)return;
+    ctx.fillStyle=b.color;
+    ctx.beginPath();
+    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+    ctx.fill();
+  });
+
+  if(aiming){
+    ctx.strokeStyle="rgba(255,255,255,.6)";
+    ctx.beginPath();
+    ctx.moveTo(balls[0].x,balls[0].y);
+    ctx.lineTo(ax,ay);
+    ctx.stroke();
+  }
 }
 
-function iniciarJogo() {
-  desenharMesa();
+function loop(){
+  update();
+  draw();
+  requestAnimationFrame(loop);
 }
-
-function novaFase() {
-  fase++;
-  localStorage.setItem("level", fase);
-  document.getElementById("level").innerText = fase;
-}
-
-function resetar() {
-  localStorage.clear();
-  location.reload();
-}
-
-desenharMesa();
+loop();
 </script>
 
 </body>
