@@ -1,128 +1,211 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Sinuca Pix Online</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinuca Pix Online</title>
 
-  <style>
-    body {
-      margin: 0;
-      font-family: Arial, sans-serif;
-      background: linear-gradient(180deg, #0b4f2f, #063a23);
-      color: #ffffff;
-      text-align: center;
-    }
-
-    h1 {
-      margin-top: 20px;
-      font-size: 28px;
-    }
-
-    h2 {
-      font-size: 16px;
-      font-weight: normal;
-      margin-bottom: 20px;
-      opacity: 0.9;
-    }
-
-    .mesa-container {
-      margin: 20px auto;
-      width: 360px;
-      background: #0d5c38;
-      padding: 10px;
-      border-radius: 12px;
-      box-shadow: 0 0 15px rgba(0,0,0,0.4);
-    }
-
-    canvas {
-      background: #145a32;
-      border: 8px solid #0b3d2e;
-      border-radius: 10px;
-    }
-
-    .botoes {
-      margin-top: 20px;
-    }
-
-    button {
-      background: #f1c40f;
-      border: none;
-      padding: 15px 25px;
-      margin: 10px;
-      font-size: 16px;
-      font-weight: bold;
-      border-radius: 8px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background: #d4ac0d;
-    }
-
-    .footer {
-      margin-top: 30px;
-      font-size: 13px;
-      opacity: 0.8;
-    }
-  </style>
+<style>
+body{
+  margin:0;
+  background:#021b12;
+  color:#fff;
+  font-family:Arial;
+  text-align:center;
+}
+h1{margin:10px 0;}
+#info{font-size:14px;opacity:.8}
+canvas{
+  background:radial-gradient(circle at center,#1f7a4a,#0a3a24);
+  border-radius:20px;
+  box-shadow:0 0 30px rgba(0,255,180,.6);
+}
+button{
+  background:linear-gradient(135deg,#ffd700,#ffb300);
+  border:none;
+  border-radius:10px;
+  padding:12px 20px;
+  font-weight:bold;
+  margin:8px;
+}
+#painel{
+  display:flex;
+  justify-content:space-around;
+  font-size:14px;
+}
+</style>
 </head>
 
 <body>
 
-  <h1>🎱 Sinuca Pix Online</h1>
-  <h2>Versão Web – Protótipo Oficial</h2>
+<h1>🎱 Sinuca Pix Online</h1>
+<div id="info">Modo grátis • IA inteligente</div>
 
-  <div class="mesa-container">
-    <canvas id="mesa" width="340" height="180"></canvas>
-  </div>
+<div id="painel">
+<div>🎖 Vitórias: <span id="vit">0</span></div>
+<div>💰 Fichas: <span id="fichas">10</span></div>
+</div>
 
-  <div class="botoes">
-    <button onclick="jogarOnline()">Jogar Online</button>
-    <button onclick="comprarFichas()">Comprar Fichas</button>
-  </div>
+<canvas id="mesa" width="360" height="200"></canvas><br>
 
-  <div class="footer">
-    © 2026 - Carlos Daniel Souza Santiago<br>
-    Todos os direitos reservados
-  </div>
+<button onclick="jogadaJogador()">ATIRAR</button>
 
-  <script>
-    const canvas = document.getElementById("mesa");
-    const ctx = canvas.getContext("2d");
+<script>
+const c=document.getElementById("mesa");
+const ctx=c.getContext("2d");
 
-    function desenharMesa() {
-      // Fundo
-      ctx.fillStyle = "#145a32";
-      ctx.fillRect(0, 0, canvas.width, canvas.height);
+let fichas=Number(localStorage.fichas||10);
+let vitorias=Number(localStorage.vitorias||0);
 
-      // Borda
-      ctx.strokeStyle = "#0b3d2e";
-      ctx.lineWidth = 10;
-      ctx.strokeRect(5, 5, canvas.width - 10, canvas.height - 10);
+document.getElementById("fichas").innerText=fichas;
+document.getElementById("vit").innerText=vitorias;
 
-      // Bola branca
-      ctx.fillStyle = "#ffffff";
-      ctx.beginPath();
-      ctx.arc(canvas.width / 2, canvas.height / 2, 8, 0, Math.PI * 2);
-      ctx.fill();
+let turno="jogador";
 
-      // Texto
-      ctx.fillStyle = "#ffffff";
-      ctx.font = "16px Arial";
-      ctx.fillText("Mesa de Sinuca", 105, 25);
-    }
+const buracos=[
+{x:0,y:0},{x:180,y:0},{x:360,y:0},
+{x:0,y:200},{x:180,y:200},{x:360,y:200}
+];
 
-    function jogarOnline() {
-      alert("Modo online ainda em desenvolvimento 🚧");
-    }
+const branca={x:90,y:100,r:7,dx:0,dy:0};
 
-    function comprarFichas() {
-      alert("Sistema Pix em desenvolvimento 💰");
-    }
+const bolas=[];
+for(let i=1;i<=7;i++){
+bolas.push({
+x:230+Math.random()*40,
+y:40+i*18,
+r:7,
+n:i,
+viva:true
+});
+}
 
-    desenharMesa();
-  </script>
+function desenhar(){
+ctx.clearRect(0,0,c.width,c.height);
+
+// buracos
+buracos.forEach(b=>{
+ctx.beginPath();
+ctx.arc(b.x,b.y,14,0,Math.PI*2);
+ctx.fillStyle="#000";
+ctx.fill();
+});
+
+// bolas
+bolas.forEach(b=>{
+if(!b.viva)return;
+ctx.beginPath();
+ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+ctx.fillStyle="#f33";
+ctx.shadowBlur=8;
+ctx.shadowColor="#f00";
+ctx.fill();
+ctx.shadowBlur=0;
+});
+
+// branca
+ctx.beginPath();
+ctx.arc(branca.x,branca.y,branca.r,0,Math.PI*2);
+ctx.fillStyle="#fff";
+ctx.shadowBlur=10;
+ctx.shadowColor="#fff";
+ctx.fill();
+ctx.shadowBlur=0;
+}
+
+function fisica(){
+branca.x+=branca.dx;
+branca.y+=branca.dy;
+branca.dx*=0.97;
+branca.dy*=0.97;
+
+if(Math.abs(branca.dx)<0.05){
+branca.dx=branca.dy=0;
+if(turno==="ia")setTimeout(jogadaIA,700);
+}
+
+if(branca.x<8||branca.x>c.width-8)branca.dx*=-1;
+if(branca.y<8||branca.y>c.height-8)branca.dy*=-1;
+
+// colisão
+bolas.forEach(b=>{
+if(!b.viva)return;
+let dx=b.x-branca.x;
+let dy=b.y-branca.y;
+let d=Math.hypot(dx,dy);
+if(d<branca.r+b.r){
+b.viva=false;
+}
+});
+
+// caçapas
+buracos.forEach(b=>{
+if(Math.hypot(branca.x-b.x,branca.y-b.y)<12){
+branca.x=90;branca.y=100;
+branca.dx=branca.dy=0;
+}
+});
+}
+
+function loop(){
+fisica();
+desenhar();
+requestAnimationFrame(loop);
+}
+
+function atirar(ang,forca){
+branca.dx=Math.cos(ang)*forca;
+branca.dy=Math.sin(ang)*forca;
+}
+
+function jogadaJogador(){
+if(turno!=="jogador")return;
+atirar(Math.random()*Math.PI*2,4);
+turno="ia";
+}
+
+function jogadaIA(){
+let alvo=bolas.find(b=>b.viva);
+if(!alvo){ganhar();return;}
+
+let dx=alvo.x-branca.x;
+let dy=alvo.y-branca.y;
+let ang=Math.atan2(dy,dx)+(Math.random()-.5)*0.2;
+let dist=Math.hypot(dx,dy);
+let forca=Math.min(5,dist/25);
+
+atirar(ang,forca);
+turno="jogador";
+}
+
+function ganhar(){
+vitorias++;
+if(vitorias%10===0)fichas+=5;
+salvar();
+alert("Você venceu!");
+reiniciar();
+}
+
+function perder(){
+fichas=Math.max(0,fichas-1);
+salvar();
+alert("Você perdeu!");
+reiniciar();
+}
+
+function salvar(){
+localStorage.vitorias=vitorias;
+localStorage.fichas=fichas;
+document.getElementById("vit").innerText=vitorias;
+document.getElementById("fichas").innerText=fichas;
+}
+
+function reiniciar(){
+bolas.forEach(b=>b.viva=true);
+}
+
+loop();
+</script>
 
 </body>
 </html>
