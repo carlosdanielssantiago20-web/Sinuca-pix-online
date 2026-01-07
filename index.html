@@ -22,7 +22,7 @@ canvas{background:#0f5f2f;border:10px solid #3a1f0f;border-radius:12px;width:95%
 
 <div id="status">
   <div>👤 Jogador</div>
-  <div>💰 Fichas: <span id="coins">100</span></div>
+  <div>💰 Fichas: 100</div>
   <div>🏆 Fase 1</div>
 </div>
 
@@ -30,77 +30,123 @@ canvas{background:#0f5f2f;border:10px solid #3a1f0f;border-radius:12px;width:95%
   <canvas id="mesa" width="800" height="400"></canvas>
 </div>
 
-<div id="info">Puxe o dedo para trás e solte para tacar</div>
+<div id="info">Puxe o dedo para trás e solte</div>
 
 <script>
 const canvas = document.getElementById("mesa");
 const ctx = canvas.getContext("2d");
 
-const friction = 0.99;
-const balls = [];
+const W = 800, H = 400;
+const friction = 0.985;
+
+class Ball {
+  constructor(x,y,color){
+    this.x=x; this.y=y;
+    this.vx=0; this.vy=0;
+    this.r=10;
+    this.color=color;
+    this.active=true;
+  }
+}
+
+const balls = [
+  new Ball(200,200,"white"),
+  new Ball(550,180,"yellow"),
+  new Ball(570,200,"blue"),
+  new Ball(550,220,"red"),
+];
+
 const pockets = [
   {x:0,y:0},{x:400,y:0},{x:800,y:0},
   {x:0,y:400},{x:400,y:400},{x:800,y:400}
 ];
 
-function Ball(x,y,color){
-  this.x=x; this.y=y;
-  this.vx=0; this.vy=0;
-  this.r=10;
-  this.color=color;
-}
+let aiming=false, startX=0, startY=0;
 
-balls.push(new Ball(200,200,"white"));
-balls.push(new Ball(550,180,"yellow"));
-balls.push(new Ball(570,200,"blue"));
-balls.push(new Ball(550,220,"red"));
-
-let aiming=false, ax=0, ay=0;
 canvas.addEventListener("touchstart",e=>{
   aiming=true;
-  ax=e.touches[0].clientX;
-  ay=e.touches[0].clientY;
+  const r = canvas.getBoundingClientRect();
+  startX = e.touches[0].clientX - r.left;
+  startY = e.touches[0].clientY - r.top;
 });
+
 canvas.addEventListener("touchend",e=>{
-  if(!aiming)return;
+  if(!aiming) return;
   aiming=false;
-  let dx=ax - balls[0].x;
-  let dy=ay - balls[0].y;
-  balls[0].vx += dx*0.03;
-  balls[0].vy += dy*0.03;
+
+  const cue = balls[0];
+  const dx = cue.x - startX;
+  const dy = cue.y - startY;
+
+  cue.vx += dx * 0.12;
+  cue.vy += dy * 0.12;
 });
 
 function update(){
   balls.forEach(b=>{
-    b.x+=b.vx; b.y+=b.vy;
-    b.vx*=friction; b.vy*=friction;
+    if(!b.active) return;
 
-    if(b.x<b.r||b.x>800-b.r) b.vx*=-1;
-    if(b.y<b.r||b.y>400-b.r) b.vy*=-1;
+    b.x += b.vx;
+    b.y += b.vy;
+
+    b.vx *= friction;
+    b.vy *= friction;
+
+    if(Math.abs(b.vx)<0.01) b.vx=0;
+    if(Math.abs(b.vy)<0.01) b.vy=0;
+
+    if(b.x < b.r){ b.x=b.r; b.vx*=-1 }
+    if(b.x > W-b.r){ b.x=W-b.r; b.vx*=-1 }
+    if(b.y < b.r){ b.y=b.r; b.vy*=-1 }
+    if(b.y > H-b.r){ b.y=H-b.r; b.vy*=-1 }
 
     pockets.forEach(p=>{
-      let d=Math.hypot(b.x-p.x,b.y-p.y);
-      if(d<18){ b.vx=b.vy=0; b.x=-100; }
+      const d = Math.hypot(b.x-p.x,b.y-p.y);
+      if(d < 18){
+        b.active=false;
+        b.vx=b.vy=0;
+      }
     });
   });
 
   for(let i=0;i<balls.length;i++){
     for(let j=i+1;j<balls.length;j++){
-      let a=balls[i], b=balls[j];
-      let dx=b.x-a.x, dy=b.y-a.y;
-      let dist=Math.hypot(dx,dy);
-      if(dist<a.r+b.r){
-        let nx=dx/dist, ny=dy/dist;
-        let p=2*(a.vx*nx+a.vy*ny-b.vx*nx-b.vy*ny)/2;
-        a.vx-=p*nx; a.vy-=p*ny;
-        b.vx+=p*nx; b.vy+=p*ny;
+      const a = balls[i], b = balls[j];
+      if(!a.active || !b.active) continue;
+
+      const dx = b.x - a.x;
+      const dy = b.y - a.y;
+      const dist = Math.hypot(dx,dy);
+      const minDist = a.r + b.r;
+
+      if(dist < minDist){
+        const nx = dx / dist;
+        const ny = dy / dist;
+
+        const overlap = minDist - dist;
+        a.x -= nx * overlap/2;
+        a.y -= ny * overlap/2;
+        b.x += nx * overlap/2;
+        b.y += ny * overlap/2;
+
+        const dvx = a.vx - b.vx;
+        const dvy = a.vy - b.vy;
+        const impact = dvx*nx + dvy*ny;
+
+        if(impact > 0) continue;
+
+        const impulse = impact;
+        a.vx -= impulse * nx;
+        a.vy -= impulse * ny;
+        b.vx += impulse * nx;
+        b.vy += impulse * ny;
       }
     }
   }
 }
 
 function draw(){
-  ctx.clearRect(0,0,800,400);
+  ctx.clearRect(0,0,W,H);
 
   pockets.forEach(p=>{
     ctx.fillStyle="#000";
@@ -110,7 +156,7 @@ function draw(){
   });
 
   balls.forEach(b=>{
-    if(b.x<0)return;
+    if(!b.active) return;
     ctx.fillStyle=b.color;
     ctx.beginPath();
     ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
@@ -121,7 +167,7 @@ function draw(){
     ctx.strokeStyle="rgba(255,255,255,.6)";
     ctx.beginPath();
     ctx.moveTo(balls[0].x,balls[0].y);
-    ctx.lineTo(ax,ay);
+    ctx.lineTo(startX,startY);
     ctx.stroke();
   }
 }
