@@ -2,57 +2,72 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Sinuca Pix Online</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinuca Pix Online</title>
 
 <style>
 body {
-  margin: 0;
-  background: #050505;
-  color: #00ffcc;
-  font-family: Arial, sans-serif;
-  text-align: center;
+    margin: 0;
+    background: radial-gradient(circle at top, #0f2027, #000);
+    font-family: Arial, sans-serif;
+    color: #00ffd5;
+    text-align: center;
 }
 
-.top {
-  display: flex;
-  justify-content: space-between;
-  padding: 10px;
+.topbar {
+    display: flex;
+    justify-content: space-between;
+    padding: 10px 15px;
+    font-size: 14px;
+}
+
+.menu {
+    display: flex;
+    gap: 10px;
+    padding: 10px;
 }
 
 button {
-  background: linear-gradient(135deg, #00ffcc, #00bfa5);
-  border: none;
-  padding: 10px;
-  border-radius: 10px;
-  font-size: 16px;
+    flex: 1;
+    padding: 12px;
+    border: none;
+    border-radius: 10px;
+    background: linear-gradient(135deg,#00ffd5,#00bfa5);
+    font-weight: bold;
+    color: #000;
 }
 
-canvas {
-  background: #0b5d2a;
-  border-radius: 15px;
-  margin-top: 10px;
-  touch-action: none;
+#mesa {
+    background: #0b5d2a;
+    border-radius: 12px;
+    margin: 10px auto;
+    display: block;
+    border: 5px solid #4b2e1e;
+    touch-action: none;
+}
+
+.status {
+    margin-top: 10px;
 }
 </style>
 </head>
 
 <body>
 
-<div class="top">
-  <div>👤 Jogador</div>
-  <div>💰 20 fichas</div>
+<div class="topbar">
+    <div>👤 Jogador</div>
+    <div>💰 <span id="fichas">20</span> fichas</div>
 </div>
 
-<div>
-  <button>Jogar Grátis (IA)</button>
-  <button>Multiplayer</button>
-  <button>Comprar Fichas</button>
+<div class="menu">
+    <button onclick="jogoIA()">🎮 Jogar Grátis (IA)</button>
+    <button onclick="multiplayer()">🌐 Multiplayer</button>
+    <button onclick="comprar()">💳 Comprar Fichas</button>
 </div>
-
-<p id="status">Toque e arraste para tacar</p>
 
 <canvas id="mesa" width="320" height="180"></canvas>
+
+<div class="status" id="status">Arraste para tacar</div>
 
 <script src="game.js"></script>
 </body>
