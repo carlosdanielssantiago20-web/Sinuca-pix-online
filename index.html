@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<title>Sinuca Pix Online</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<style>
+body {
+  margin: 0;
+  background: #050505;
+  color: #00ffcc;
+  font-family: Arial, sans-serif;
+  text-align: center;
+}
+
+.top {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+}
+
+button {
+  background: linear-gradient(135deg, #00ffcc, #00bfa5);
+  border: none;
+  padding: 10px;
+  border-radius: 10px;
+  font-size: 16px;
+}
+
+canvas {
+  background: #0b5d2a;
+  border-radius: 15px;
+  margin-top: 10px;
+  touch-action: none;
+}
+</style>
+</head>
+
+<body>
+
+<div class="top">
+  <div>👤 Jogador</div>
+  <div>💰 20 fichas</div>
+</div>
+
+<div>
+  <button>Jogar Grátis (IA)</button>
+  <button>Multiplayer</button>
+  <button>Comprar Fichas</button>
+</div>
+
+<p id="status">Toque e arraste para tacar</p>
+
+<canvas id="mesa" width="320" height="180"></canvas>
+
+<script src="game.js"></script>
+</body>
+</html>
