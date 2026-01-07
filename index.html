@@ -27,185 +27,136 @@ canvas {
 </head>
 
 <body>
-
 <canvas id="game" width="360" height="640"></canvas>
 
 <script>
 const canvas = document.getElementById("game");
 const ctx = canvas.getContext("2d");
 
-const table = {
-  left: 30,
-  right: canvas.width - 30,
-  top: 30,
-  bottom: canvas.height - 30
-};
-
+const table = { left:30, right:330, top:30, bottom:610 };
 let pointer = {x:0,y:0};
 let aiming = false;
 let turno = "player";
 
-const cueBall = {
-  x: canvas.width / 2,
-  y: canvas.height - 140,
-  r: 10,
-  vx: 0,
-  vy: 0,
-  color: "#fff"
-};
+const balls = [];
 
-const balls = [cueBall];
-
-function createBalls(){
-  const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
-  let startX = canvas.width/2 - 55;
-  let startY = 120;
-
-  for(let i=0;i<6;i++){
-    balls.push({
-      x: startX + i*22,
-      y: startY,
-      r: 10,
-      vx: 0,
-      vy: 0,
-      color: colors[i]
-    });
-  }
+function createBall(x,y,color){
+  return { x,y,r:10,vx:0,vy:0,color };
 }
-createBalls();
 
-// ===== INPUT (MOUSE + TOUCH) =====
+// bola branca
+const cueBall = createBall(180,500,"#fff");
+balls.push(cueBall);
+
+// bolas coloridas
+const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
+let sx = 180-55;
+for(let i=0;i<6;i++){
+  balls.push(createBall(sx+i*22,150,colors[i]));
+}
+
+// ===== INPUT =====
 function setPointer(e){
-  const rect = canvas.getBoundingClientRect();
-  const touch = e.touches ? e.touches[0] : e;
-  pointer.x = touch.clientX - rect.left;
-  pointer.y = touch.clientY - rect.top;
+  const r = canvas.getBoundingClientRect();
+  const t = e.touches ? e.touches[0] : e;
+  pointer.x = t.clientX - r.left;
+  pointer.y = t.clientY - r.top;
 }
 
-canvas.addEventListener("mousedown", e=>{
-  if(turno !== "player" || !ballsStopped()) return;
-  setPointer(e);
-  aiming = true;
-});
+canvas.onmousedown = e=>{
+  if(turno==="player" && ballsStopped()){ setPointer(e); aiming=true; }
+};
+canvas.onmousemove = e=>{ if(aiming) setPointer(e); };
+canvas.onmouseup = ()=>shoot();
 
-canvas.addEventListener("mousemove", e=>{
-  if(aiming) setPointer(e);
-});
-
-canvas.addEventListener("mouseup", ()=>{
-  shoot();
-});
-
-canvas.addEventListener("touchstart", e=>{
-  if(turno !== "player" || !ballsStopped()) return;
-  setPointer(e);
-  aiming = true;
-});
-
-canvas.addEventListener("touchmove", e=>{
-  if(aiming) setPointer(e);
-});
-
-canvas.addEventListener("touchend", ()=>{
-  shoot();
-});
+canvas.ontouchstart = e=>{
+  if(turno==="player" && ballsStopped()){ setPointer(e); aiming=true; }
+};
+canvas.ontouchmove = e=>{ if(aiming) setPointer(e); };
+canvas.ontouchend = ()=>shoot();
 
 function shoot(){
   if(!aiming) return;
   const dx = cueBall.x - pointer.x;
   const dy = cueBall.y - pointer.y;
-
-  let power = Math.min(Math.hypot(dx,dy), 120);
-  cueBall.vx = (dx / power) * (power * 0.15);
-  cueBall.vy = (dy / power) * (power * 0.15);
-
-  aiming = false;
-  turno = "ia";
+  const dist = Math.min(Math.hypot(dx,dy),120);
+  cueBall.vx = (dx/dist)*6;
+  cueBall.vy = (dy/dist)*6;
+  aiming=false;
+  turno="ia";
 }
 
 // ===== IA =====
 function iaPlay(){
-  let target = balls[Math.floor(Math.random()*(balls.length-1))+1];
-  const dx = cueBall.x - target.x;
-  const dy = cueBall.y - target.y;
-
-  cueBall.vx = dx * 0.08;
-  cueBall.vy = dy * 0.08;
+  let alvo = balls[Math.floor(Math.random()*6)+1];
+  const dx = cueBall.x - alvo.x;
+  const dy = cueBall.y - alvo.y;
+  cueBall.vx = dx*0.04;
+  cueBall.vy = dy*0.04;
 }
 
-// ===== UTIL =====
+// ===== FÍSICA =====
 function ballsStopped(){
-  return balls.every(b => Math.hypot(b.vx,b.vy) < 0.1);
+  return balls.every(b=>Math.hypot(b.vx,b.vy)<0.05);
 }
 
-// ===== DRAW =====
+function collision(a,b){
+  const dx=b.x-a.x, dy=b.y-a.y;
+  const dist=Math.hypot(dx,dy);
+  if(dist< a.r+b.r){
+    const nx=dx/dist, ny=dy/dist;
+    const p=2*(a.vx*nx+a.vy*ny-b.vx*nx-b.vy*ny)/2;
+    a.vx-=p*nx; a.vy-=p*ny;
+    b.vx+=p*nx; b.vy+=p*ny;
+  }
+}
+
+// ===== DESENHO =====
 function drawBall(b){
   ctx.beginPath();
-  ctx.arc(b.x+3, b.y+4, b.r, 0, Math.PI*2);
-  ctx.fillStyle = "rgba(0,0,0,0.3)";
-  ctx.fill();
-
-  const g = ctx.createRadialGradient(
-    b.x-3, b.y-3, b.r*0.3,
-    b.x, b.y, b.r
-  );
-  g.addColorStop(0,"#fff");
-  g.addColorStop(0.4,b.color);
-  g.addColorStop(1,"#000");
-
-  ctx.beginPath();
-  ctx.arc(b.x, b.y, b.r, 0, Math.PI*2);
-  ctx.fillStyle = g;
+  ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
+  ctx.fillStyle=b.color;
   ctx.fill();
 }
 
-// ===== LOOP =====
 function update(){
   ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  ctx.strokeStyle = "#2b1b0f";
-  ctx.lineWidth = 20;
-  ctx.strokeRect(
-    table.left-10,
-    table.top-10,
-    table.right-table.left+20,
-    table.bottom-table.top+20
-  );
+  ctx.strokeStyle="#2b1b0f";
+  ctx.lineWidth=20;
+  ctx.strokeRect(20,20,320,600);
 
   balls.forEach(b=>{
-    b.x += b.vx;
-    b.y += b.vy;
-    b.vx *= 0.98;
-    b.vy *= 0.98;
+    b.x+=b.vx; b.y+=b.vy;
+    b.vx*=0.98; b.vy*=0.98;
 
-    if(b.x-b.r < table.left || b.x+b.r > table.right) b.vx *= -1;
-    if(b.y-b.r < table.top || b.y+b.r > table.bottom) b.vy *= -1;
-
-    drawBall(b);
+    if(b.x-b.r<table.left||b.x+b.r>table.right) b.vx*=-1;
+    if(b.y-b.r<table.top||b.y+b.r>table.bottom) b.vy*=-1;
   });
+
+  for(let i=0;i<balls.length;i++)
+    for(let j=i+1;j<balls.length;j++)
+      collision(balls[i],balls[j]);
+
+  balls.forEach(drawBall);
 
   if(aiming){
     ctx.setLineDash([8,8]);
-    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+    ctx.strokeStyle="#fff";
     ctx.beginPath();
-    ctx.moveTo(cueBall.x, cueBall.y);
-    ctx.lineTo(pointer.x, pointer.y);
+    ctx.moveTo(cueBall.x,cueBall.y);
+    ctx.lineTo(pointer.x,pointer.y);
     ctx.stroke();
     ctx.setLineDash([]);
   }
 
-  if(turno === "ia" && ballsStopped()){
-    setTimeout(()=>{
-      iaPlay();
-      turno = "player";
-    }, 700);
+  if(turno==="ia" && ballsStopped()){
+    setTimeout(()=>{ iaPlay(); turno="player"; },700);
   }
 
   requestAnimationFrame(update);
 }
-
 update();
 </script>
-
 </body>
 </html>
