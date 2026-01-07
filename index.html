@@ -2,253 +2,158 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<title>Sinuca Pix Online</title>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Sinuca Pix Online</title>
 
 <style>
 * {
+  margin: 0;
+  padding: 0;
   box-sizing: border-box;
-  font-family: Arial, Helvetica, sans-serif;
+  font-family: Arial, sans-serif;
 }
 
 body {
-  margin: 0;
-  background: radial-gradient(circle at top, #1b5e20, #000);
+  background: #0b0b0b;
   color: #fff;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
   height: 100vh;
 }
 
-#app {
-  display: flex;
-  flex-direction: column;
-  height: 100%;
-}
-
-/* HEADER */
 header {
-  background: #0d3b22;
+  width: 100%;
   padding: 12px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-}
-
-.profile {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-.avatar {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  background: #2ecc71;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  background: #111;
+  text-align: center;
+  font-size: 20px;
   font-weight: bold;
-  color: #000;
+  color: #00ff88;
 }
 
-.profile-info {
+#status {
+  width: 100%;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px;
+  background: #151515;
   font-size: 14px;
 }
 
-.coins {
-  background: #f1c40f;
-  color: #000;
-  padding: 6px 12px;
-  border-radius: 20px;
-  font-weight: bold;
-}
-
-/* MAIN */
-main {
+#mesa-container {
   flex: 1;
-  padding: 20px;
   display: flex;
-  flex-direction: column;
-  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
 }
 
-.logo {
-  text-align: center;
-  font-size: 28px;
-  font-weight: bold;
-  margin-top: 10px;
+canvas {
+  background: #0f5f2f;
+  border: 10px solid #3a1f0f;
+  border-radius: 12px;
+  width: 95%;
+  max-width: 420px;
+  aspect-ratio: 2 / 1;
 }
 
-.menu {
+#controles {
+  width: 100%;
+  padding: 12px;
+  background: #111;
   display: flex;
-  flex-direction: column;
-  gap: 15px;
+  gap: 10px;
 }
 
 button {
-  padding: 16px;
-  border-radius: 12px;
-  border: none;
+  flex: 1;
+  padding: 12px;
   font-size: 16px;
-  font-weight: bold;
-  cursor: pointer;
-}
-
-.play {
-  background: linear-gradient(45deg, #2ecc71, #27ae60);
-  color: #000;
-}
-
-.multi {
-  background: linear-gradient(45deg, #3498db, #2980b9);
-  color: #fff;
-}
-
-.ranking {
-  background: #8e44ad;
-  color: #fff;
-}
-
-.settings {
-  background: #7f8c8d;
-  color: #fff;
-}
-
-/* FOOTER */
-footer {
-  background: #0d3b22;
-  padding: 10px;
-  text-align: center;
-  font-size: 12px;
-  opacity: 0.8;
-}
-
-/* MODAL */
-.modal {
-  position: fixed;
-  inset: 0;
-  background: rgba(0,0,0,0.8);
-  display: none;
-  align-items: center;
-  justify-content: center;
-}
-
-.modal-content {
-  background: #1b5e20;
-  padding: 20px;
-  border-radius: 16px;
-  width: 90%;
-  max-width: 320px;
-  text-align: center;
-}
-
-.modal-content h2 {
-  margin-top: 0;
-}
-
-.modal-content input {
-  width: 100%;
-  padding: 10px;
-  border-radius: 8px;
   border: none;
-  margin-bottom: 10px;
-}
-
-.modal-content button {
-  background: #2ecc71;
+  border-radius: 6px;
+  background: #00ff88;
   color: #000;
+  font-weight: bold;
+}
+button:active {
+  transform: scale(0.97);
 }
 </style>
 </head>
 
 <body>
 
-<div id="app">
+<header>🎱 SINUCA PIX ONLINE</header>
 
-  <header>
-    <div class="profile">
-      <div class="avatar" id="avatar">A</div>
-      <div class="profile-info">
-        <div id="playerName">Jogador</div>
-        <div>ID: <span id="playerId"></span></div>
-      </div>
-    </div>
-    <div class="coins">
-      💰 <span id="coins">10</span>
-    </div>
-  </header>
-
-  <main>
-    <div class="logo">🎱 Sinuca Pix Online</div>
-
-    <div class="menu">
-      <button class="play" onclick="playAI()">🎮 Jogo Grátis (IA)</button>
-      <button class="multi" onclick="alert('Multiplayer em desenvolvimento')">👥 Multiplayer</button>
-      <button class="ranking" onclick="alert('Ranking em breve')">🏆 Ranking</button>
-      <button class="settings" onclick="openSettings()">⚙ Configurações</button>
-    </div>
-  </main>
-
-  <footer>
-    © 2026 Sinuca Pix Online
-  </footer>
-
+<div id="status">
+  <div>👤 Jogador: <span id="player">Convidado</span></div>
+  <div>💰 Fichas: <span id="coins">100</span></div>
+  <div>🏆 Fase: <span id="level">1</span></div>
 </div>
 
-<!-- MODAL CONFIG -->
-<div class="modal" id="settingsModal">
-  <div class="modal-content">
-    <h2>Editar Perfil</h2>
-    <input type="text" id="nameInput" placeholder="Seu nome">
-    <button onclick="saveName()">Salvar</button>
-  </div>
+<div id="mesa-container">
+  <canvas id="mesa" width="800" height="400"></canvas>
+</div>
+
+<div id="controles">
+  <button onclick="iniciarJogo()">Jogar</button>
+  <button onclick="novaFase()">Nova Fase</button>
+  <button onclick="resetar()">Reset</button>
 </div>
 
 <script>
-/* GERAR ID */
-let playerId = localStorage.getItem("playerId");
-if (!playerId) {
-  playerId = Math.floor(100000 + Math.random() * 900000);
-  localStorage.setItem("playerId", playerId);
-}
-document.getElementById("playerId").innerText = playerId;
+const canvas = document.getElementById("mesa");
+const ctx = canvas.getContext("2d");
 
-/* NOME */
-let playerName = localStorage.getItem("playerName") || "Jogador";
-document.getElementById("playerName").innerText = playerName;
-document.getElementById("avatar").innerText = playerName[0].toUpperCase();
+// dados base
+let jogador = localStorage.getItem("player") || "Convidado";
+let fichas = Number(localStorage.getItem("coins")) || 100;
+let fase = Number(localStorage.getItem("level")) || 1;
 
-/* FICHAS */
-let coins = localStorage.getItem("coins") || 10;
-document.getElementById("coins").innerText = coins;
+document.getElementById("player").innerText = jogador;
+document.getElementById("coins").innerText = fichas;
+document.getElementById("level").innerText = fase;
 
-/* FUNÇÕES */
-function playAI() {
-  alert("Jogo contra IA iniciado (fase 2)");
-}
+// desenho inicial
+function desenharMesa() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-function openSettings() {
-  document.getElementById("settingsModal").style.display = "flex";
-  document.getElementById("nameInput").value = playerName;
-}
+  // buracos
+  ctx.fillStyle = "#000";
+  const buracos = [
+    [0,0],[400,0],[800,0],
+    [0,400],[400,400],[800,400]
+  ];
+  buracos.forEach(b=>{
+    ctx.beginPath();
+    ctx.arc(b[0], b[1], 18, 0, Math.PI*2);
+    ctx.fill();
+  });
 
-function saveName() {
-  const newName = document.getElementById("nameInput").value.trim();
-  if (newName) {
-    playerName = newName;
-    localStorage.setItem("playerName", playerName);
-    document.getElementById("playerName").innerText = playerName;
-    document.getElementById("avatar").innerText = playerName[0].toUpperCase();
-  }
-  document.getElementById("settingsModal").style.display = "none";
+  // bola branca
+  ctx.fillStyle = "#fff";
+  ctx.beginPath();
+  ctx.arc(200, 200, 10, 0, Math.PI*2);
+  ctx.fill();
 }
 
-/* FECHAR MODAL AO CLICAR FORA */
-document.getElementById("settingsModal").addEventListener("click", e => {
-  if (e.target.id === "settingsModal") {
-    e.target.style.display = "none";
-  }
-});
+function iniciarJogo() {
+  desenharMesa();
+}
+
+function novaFase() {
+  fase++;
+  localStorage.setItem("level", fase);
+  document.getElementById("level").innerText = fase;
+}
+
+function resetar() {
+  localStorage.clear();
+  location.reload();
+}
+
+desenharMesa();
 </script>
 
 </body>
