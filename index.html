@@ -2,183 +2,86 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sinuca Pix Online</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
 
 <style>
-*{margin:0;padding:0;box-sizing:border-box;font-family:Arial}
-body{background:#0b0b0b;color:#fff;display:flex;flex-direction:column;height:100vh}
-header{background:#111;color:#00ff88;text-align:center;padding:12px;font-size:20px;font-weight:bold}
-#status{display:flex;justify-content:space-around;background:#151515;padding:8px;font-size:14px}
-#mesaBox{flex:1;display:flex;justify-content:center;align-items:center}
-canvas{background:#0f5f2f;border:10px solid #3a1f0f;border-radius:12px;width:95%;max-width:420px;aspect-ratio:2/1}
-#info{text-align:center;padding:8px;background:#111;font-size:14px}
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: radial-gradient(circle at top, #0f2027, #000);
+  color: #fff;
+}
+
+#topbar {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px;
+  background: rgba(0,0,0,0.8);
+  border-bottom: 2px solid #00ffcc;
+}
+
+#menu {
+  display: flex;
+  gap: 10px;
+  padding: 10px;
+  justify-content: center;
+}
+
+button {
+  background: linear-gradient(135deg,#00ffcc,#007777);
+  border: none;
+  padding: 12px 16px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: bold;
+  cursor: pointer;
+  color: #000;
+}
+
+button:hover {
+  opacity: 0.8;
+}
+
+#gameArea {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+canvas {
+  background: #0b5d2a;
+  border: 4px solid #3a2a1a;
+  border-radius: 12px;
+}
+
+#status {
+  text-align: center;
+  margin-top: 10px;
+  color: #00ffcc;
+}
 </style>
 </head>
 
 <body>
 
-<header>🎱 SINUCA PIX ONLINE</header>
-
-<div id="status">
-  <div>👤 Jogador</div>
-  <div>💰 Fichas: 100</div>
-  <div>🏆 Fase 1</div>
+<div id="topbar">
+  <div>👤 <span id="playerName">Jogador</span></div>
+  <div>💰 <span id="fichas">20</span> fichas</div>
 </div>
 
-<div id="mesaBox">
-  <canvas id="mesa" width="800" height="400"></canvas>
+<div id="menu">
+  <button onclick="playFree()">🎮 Jogar Grátis (IA)</button>
+  <button onclick="alert('Em breve')">🌐 Multiplayer</button>
+  <button onclick="alert('Em breve')">💰 Comprar Fichas</button>
 </div>
 
-<div id="info">Puxe o dedo para trás e solte</div>
+<div id="gameArea">
+  <canvas id="gameCanvas" width="360" height="180"></canvas>
+</div>
 
-<script>
-const canvas = document.getElementById("mesa");
-const ctx = canvas.getContext("2d");
+<div id="status">Modo: Aguardando…</div>
 
-const W = 800, H = 400;
-const friction = 0.985;
-
-class Ball {
-  constructor(x,y,color){
-    this.x=x; this.y=y;
-    this.vx=0; this.vy=0;
-    this.r=10;
-    this.color=color;
-    this.active=true;
-  }
-}
-
-const balls = [
-  new Ball(200,200,"white"),
-  new Ball(550,180,"yellow"),
-  new Ball(570,200,"blue"),
-  new Ball(550,220,"red"),
-];
-
-const pockets = [
-  {x:0,y:0},{x:400,y:0},{x:800,y:0},
-  {x:0,y:400},{x:400,y:400},{x:800,y:400}
-];
-
-let aiming=false, startX=0, startY=0;
-
-canvas.addEventListener("touchstart",e=>{
-  aiming=true;
-  const r = canvas.getBoundingClientRect();
-  startX = e.touches[0].clientX - r.left;
-  startY = e.touches[0].clientY - r.top;
-});
-
-canvas.addEventListener("touchend",e=>{
-  if(!aiming) return;
-  aiming=false;
-
-  const cue = balls[0];
-  const dx = cue.x - startX;
-  const dy = cue.y - startY;
-
-  cue.vx += dx * 0.12;
-  cue.vy += dy * 0.12;
-});
-
-function update(){
-  balls.forEach(b=>{
-    if(!b.active) return;
-
-    b.x += b.vx;
-    b.y += b.vy;
-
-    b.vx *= friction;
-    b.vy *= friction;
-
-    if(Math.abs(b.vx)<0.01) b.vx=0;
-    if(Math.abs(b.vy)<0.01) b.vy=0;
-
-    if(b.x < b.r){ b.x=b.r; b.vx*=-1 }
-    if(b.x > W-b.r){ b.x=W-b.r; b.vx*=-1 }
-    if(b.y < b.r){ b.y=b.r; b.vy*=-1 }
-    if(b.y > H-b.r){ b.y=H-b.r; b.vy*=-1 }
-
-    pockets.forEach(p=>{
-      const d = Math.hypot(b.x-p.x,b.y-p.y);
-      if(d < 18){
-        b.active=false;
-        b.vx=b.vy=0;
-      }
-    });
-  });
-
-  for(let i=0;i<balls.length;i++){
-    for(let j=i+1;j<balls.length;j++){
-      const a = balls[i], b = balls[j];
-      if(!a.active || !b.active) continue;
-
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const dist = Math.hypot(dx,dy);
-      const minDist = a.r + b.r;
-
-      if(dist < minDist){
-        const nx = dx / dist;
-        const ny = dy / dist;
-
-        const overlap = minDist - dist;
-        a.x -= nx * overlap/2;
-        a.y -= ny * overlap/2;
-        b.x += nx * overlap/2;
-        b.y += ny * overlap/2;
-
-        const dvx = a.vx - b.vx;
-        const dvy = a.vy - b.vy;
-        const impact = dvx*nx + dvy*ny;
-
-        if(impact > 0) continue;
-
-        const impulse = impact;
-        a.vx -= impulse * nx;
-        a.vy -= impulse * ny;
-        b.vx += impulse * nx;
-        b.vy += impulse * ny;
-      }
-    }
-  }
-}
-
-function draw(){
-  ctx.clearRect(0,0,W,H);
-
-  pockets.forEach(p=>{
-    ctx.fillStyle="#000";
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,18,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  balls.forEach(b=>{
-    if(!b.active) return;
-    ctx.fillStyle=b.color;
-    ctx.beginPath();
-    ctx.arc(b.x,b.y,b.r,0,Math.PI*2);
-    ctx.fill();
-  });
-
-  if(aiming){
-    ctx.strokeStyle="rgba(255,255,255,.6)";
-    ctx.beginPath();
-    ctx.moveTo(balls[0].x,balls[0].y);
-    ctx.lineTo(startX,startY);
-    ctx.stroke();
-  }
-}
-
-function loop(){
-  update();
-  draw();
-  requestAnimationFrame(loop);
-}
-loop();
-</script>
-
+<script src="game.js"></script>
 </body>
 </html>
