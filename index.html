@@ -1,183 +1,28 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Sinuca Pix Online</title>
+  <meta charset="UTF-8">
+  <title>Sinuca Pix Online</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
 
-<style>
-body {
-  margin: 0;
-  background: radial-gradient(#0b3d2e, #06261c);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  color: #fff;
-  font-family: Arial, sans-serif;
-}
+  <!-- Phaser -->
+  <script src="https://cdn.jsdelivr.net/npm/phaser@3/dist/phaser.min.js"></script>
 
-h1 {
-  margin: 10px 0;
-}
-
-canvas {
-  background: #145a32;
-  border: 12px solid #0b3d2e;
-  border-radius: 20px;
-  touch-action: none;
-}
-</style>
-</head>
-
-<body>
-<h1>🎱 Sinuca Pix Online</h1>
-
-<canvas id="game" width="360" height="200"></canvas>
-
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-
-const friction = 0.985;
-let aiming = false;
-let power = 0;
-
-const pockets = [
-  {x:0,y:0},{x:180,y:0},{x:360,y:0},
-  {x:0,y:200},{x:180,y:200},{x:360,y:200}
-];
-
-class Ball {
-  constructor(x,y,color) {
-    this.x=x; this.y=y;
-    this.vx=0; this.vy=0;
-    this.r=7;
-    this.color=color;
-    this.inGame=true;
-  }
-
-  draw() {
-    if(!this.inGame) return;
-    ctx.beginPath();
-    ctx.arc(this.x,this.y,this.r,0,Math.PI*2);
-    ctx.fillStyle=this.color;
-    ctx.fill();
-    ctx.shadowColor="rgba(0,0,0,0.4)";
-    ctx.shadowBlur=4;
-    ctx.shadowOffsetY=2;
-  }
-
-  move() {
-    if(!this.inGame) return;
-    this.x+=this.vx;
-    this.y+=this.vy;
-    this.vx*=friction;
-    this.vy*=friction;
-
-    if(Math.abs(this.vx)<0.05) this.vx=0;
-    if(Math.abs(this.vy)<0.05) this.vy=0;
-
-    if(this.x<this.r||this.x>canvas.width-this.r) this.vx*=-1;
-    if(this.y<this.r||this.y>canvas.height-this.r) this.vy*=-1;
-
-    for(let p of pockets){
-      const d=Math.hypot(this.x-p.x,this.y-p.y);
-      if(d<12){
-        this.inGame=false;
-        this.vx=this.vy=0;
-      }
+  <style>
+    body {
+      margin: 0;
+      background: #0b3d2e;
+      overflow: hidden;
     }
-  }
-}
+    canvas {
+      display: block;
+      margin: auto;
+    }
+  </style>
+</head>
+<body>
 
-const balls=[];
-const cueBall=new Ball(80,100,"white");
-balls.push(cueBall);
+<script src="game.js"></script>
 
-const colors=["yellow","blue","red","purple","orange","green","brown","black"];
-let startX=260,startY=100,i=0;
-for(let row=0;row<4;row++){
-  for(let col=0;col<=row;col++){
-    balls.push(new Ball(
-      startX+row*14,
-      startY-row*7+col*14,
-      colors[i%colors.length]
-    ));
-    i++;
-  }
-}
-
-function collide(b1,b2){
-  if(!b1.inGame||!b2.inGame) return;
-  const dx=b2.x-b1.x;
-  const dy=b2.y-b1.y;
-  const dist=Math.hypot(dx,dy);
-  if(dist<b1.r+b2.r){
-    const angle=Math.atan2(dy,dx);
-    const speed1=Math.hypot(b1.vx,b1.vy);
-    const speed2=Math.hypot(b2.vx,b2.vy);
-
-    b1.vx=Math.cos(angle+Math.PI)*speed2;
-    b1.vy=Math.sin(angle+Math.PI)*speed2;
-    b2.vx=Math.cos(angle)*speed1;
-    b2.vy=Math.sin(angle)*speed1;
-  }
-}
-
-function drawTable(){
-  ctx.clearRect(0,0,canvas.width,canvas.height);
-
-  ctx.fillStyle="#0b3d2e";
-  pockets.forEach(p=>{
-    ctx.beginPath();
-    ctx.arc(p.x,p.y,10,0,Math.PI*2);
-    ctx.fill();
-  });
-}
-
-canvas.addEventListener("touchstart",()=>aiming=true);
-canvas.addEventListener("touchend",(e)=>{
-  aiming=false;
-  const force=power*0.15;
-  const angle=Math.atan2(
-    canvas.height/2-cueBall.y,
-    canvas.width/2-cueBall.x
-  );
-  cueBall.vx=-Math.cos(angle)*force;
-  cueBall.vy=-Math.sin(angle)*force;
-  power=0;
-});
-
-canvas.addEventListener("touchmove",(e)=>{
-  if(!aiming) return;
-  power=Math.min(40,power+1);
-});
-
-function drawCue(){
-  if(!aiming) return;
-  ctx.strokeStyle="#deb887";
-  ctx.lineWidth=4;
-  ctx.beginPath();
-  ctx.moveTo(cueBall.x,cueBall.y);
-  ctx.lineTo(cueBall.x-power*3,cueBall.y);
-  ctx.stroke();
-}
-
-function loop(){
-  drawTable();
-  balls.forEach(b=>b.move());
-  for(let i=0;i<balls.length;i++)
-    for(let j=i+1;j<balls.length;j++)
-      collide(balls[i],balls[j]);
-  balls.forEach(b=>b.draw());
-  drawCue();
-  requestAnimationFrame(loop);
-}
-loop();
-</script>
-
-<footer style="margin:10px;font-size:12px">
-© 2026 - Carlos Daniel Souza Santiago
-</footer>
 </body>
 </html>
