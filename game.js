@@ -1,81 +1,75 @@
 const canvas = document.getElementById("mesa");
 const ctx = canvas.getContext("2d");
-const status = document.getElementById("status");
 
-let ball = {
-  x: canvas.width / 2,
-  y: canvas.height / 2,
-  r: 6,
-  vx: 0,
-  vy: 0
+let bola = {
+    x: canvas.width / 2,
+    y: canvas.height / 2,
+    vx: 0,
+    vy: 0,
+    r: 6
 };
 
-let dragging = false;
-let aimX = 0;
-let aimY = 0;
+let tocando = false;
+let inicio = {};
+let fichas = 20;
 
-// Desenhar mesa
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function desenhar() {
+    ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // Bola
-  ctx.beginPath();
-  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
-  ctx.fillStyle = "white";
-  ctx.fill();
-
-  // Linha de mira
-  if (dragging) {
+    // Bola
     ctx.beginPath();
-    ctx.moveTo(ball.x, ball.y);
-    ctx.lineTo(aimX, aimY);
-    ctx.strokeStyle = "#00ffcc";
-    ctx.lineWidth = 2;
-    ctx.stroke();
-  }
+    ctx.arc(bola.x, bola.y, bola.r, 0, Math.PI*2);
+    ctx.fillStyle = "white";
+    ctx.fill();
+
+    requestAnimationFrame(desenhar);
 }
 
-// Física
-function update() {
-  ball.x += ball.vx;
-  ball.y += ball.vy;
+function atualizar() {
+    bola.x += bola.vx;
+    bola.y += bola.vy;
 
-  ball.vx *= 0.98;
-  ball.vy *= 0.98;
+    bola.vx *= 0.98;
+    bola.vy *= 0.98;
 
-  if (ball.x < ball.r || ball.x > canvas.width - ball.r) ball.vx *= -1;
-  if (ball.y < ball.r || ball.y > canvas.height - ball.r) ball.vy *= -1;
+    // paredes
+    if (bola.x < bola.r || bola.x > canvas.width - bola.r) bola.vx *= -1;
+    if (bola.y < bola.r || bola.y > canvas.height - bola.r) bola.vy *= -1;
 
-  if (Math.abs(ball.vx) < 0.05) ball.vx = 0;
-  if (Math.abs(ball.vy) < 0.05) ball.vy = 0;
-
-  draw();
-  requestAnimationFrame(update);
+    setTimeout(atualizar, 16);
 }
 
-// Controles
-canvas.addEventListener("pointerdown", e => {
-  dragging = true;
-  aimX = e.offsetX;
-  aimY = e.offsetY;
+canvas.addEventListener("touchstart", e => {
+    const t = e.touches[0];
+    tocando = true;
+    inicio = { x: t.clientX, y: t.clientY };
 });
 
-canvas.addEventListener("pointermove", e => {
-  if (!dragging) return;
-  aimX = e.offsetX;
-  aimY = e.offsetY;
+canvas.addEventListener("touchend", e => {
+    if (!tocando) return;
+    tocando = false;
+
+    const dx = inicio.x - event.changedTouches[0].clientX;
+    const dy = inicio.y - event.changedTouches[0].clientY;
+
+    bola.vx = dx * 0.08;
+    bola.vy = dy * 0.08;
+
+    document.getElementById("status").innerText = "Tacada!";
 });
 
-canvas.addEventListener("pointerup", e => {
-  dragging = false;
+function jogoIA(){
+    document.getElementById("status").innerText = "Jogando contra IA...";
+}
 
-  let dx = ball.x - e.offsetX;
-  let dy = ball.y - e.offsetY;
+function multiplayer(){
+    document.getElementById("status").innerText = "Multiplayer em desenvolvimento";
+}
 
-  ball.vx = dx * 0.08;
-  ball.vy = dy * 0.08;
+function comprar(){
+    fichas += 10;
+    document.getElementById("fichas").innerText = fichas;
+}
 
-  status.innerText = "Tacada!";
-});
-
-update();
+desenhar();
+atualizar();
