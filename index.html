@@ -88,11 +88,35 @@ function shoot(){
 
 // ===== IA =====
 function iaPlay(){
-  let alvo = balls[Math.floor(Math.random()*6)+1];
-  const dx = cueBall.x - alvo.x;
-  const dy = cueBall.y - alvo.y;
-  cueBall.vx = dx*0.04;
-  cueBall.vy = dy*0.04;
+  let alvo = null;
+  let menorDist = Infinity;
+
+  // escolhe a bola mais próxima
+  for(let i=1;i<balls.length;i++){
+    const b = balls[i];
+    const d = Math.hypot(b.x - cueBall.x, b.y - cueBall.y);
+    if(d < menorDist){
+      menorDist = d;
+      alvo = b;
+    }
+  }
+
+  if(!alvo) return;
+
+  // direção
+  let dx = cueBall.x - alvo.x;
+  let dy = cueBall.y - alvo.y;
+  let dist = Math.hypot(dx,dy);
+
+  // normaliza
+  dx /= dist;
+  dy /= dist;
+
+  // força inteligente
+  let força = Math.min(dist * 0.03, 5);
+
+  cueBall.vx = dx * força;
+  cueBall.vy = dy * força;
 }
 
 // ===== FÍSICA =====
