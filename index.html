@@ -2,73 +2,163 @@
 <html lang="pt-BR">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Sinuca Pix Online</title>
-
 <style>
 body {
-    margin: 0;
-    background: radial-gradient(circle at top, #0f2027, #000);
-    font-family: Arial, sans-serif;
-    color: #00ffd5;
-    text-align: center;
+  margin: 0;
+  background: radial-gradient(circle at top, #111, #000);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
 }
 
-.topbar {
-    display: flex;
-    justify-content: space-between;
-    padding: 10px 15px;
-    font-size: 14px;
-}
-
-.menu {
-    display: flex;
-    gap: 10px;
-    padding: 10px;
-}
-
-button {
-    flex: 1;
-    padding: 12px;
-    border: none;
-    border-radius: 10px;
-    background: linear-gradient(135deg,#00ffd5,#00bfa5);
-    font-weight: bold;
-    color: #000;
-}
-
-#mesa {
-    background: #0b5d2a;
-    border-radius: 12px;
-    margin: 10px auto;
-    display: block;
-    border: 5px solid #4b2e1e;
-    touch-action: none;
-}
-
-.status {
-    margin-top: 10px;
+canvas {
+  background: radial-gradient(circle, #0f6b3f, #064026);
+  border-radius: 20px;
+  box-shadow:
+    0 0 40px rgba(0,255,150,0.3),
+    inset 0 0 25px rgba(0,0,0,0.8);
 }
 </style>
 </head>
 
 <body>
 
-<div class="topbar">
-    <div>👤 Jogador</div>
-    <div>💰 <span id="fichas">20</span> fichas</div>
-</div>
+<canvas id="game" width="360" height="640"></canvas>
 
-<div class="menu">
-    <button onclick="jogoIA()">🎮 Jogar Grátis (IA)</button>
-    <button onclick="multiplayer()">🌐 Multiplayer</button>
-    <button onclick="comprar()">💳 Comprar Fichas</button>
-</div>
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
 
-<canvas id="mesa" width="320" height="180"></canvas>
+const table = {
+  left: 30,
+  right: canvas.width - 30,
+  top: 30,
+  bottom: canvas.height - 30
+};
 
-<div class="status" id="status">Arraste para tacar</div>
+let mouse = {x:0,y:0};
+let shooting = false;
 
-<script src="game.js"></script>
+const cueBall = {
+  x: canvas.width / 2,
+  y: canvas.height - 140,
+  r: 10,
+  vx: 0,
+  vy: 0,
+  color: "#ffffff"
+};
+
+const balls = [cueBall];
+
+function createBalls() {
+  const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
+  let startX = canvas.width/2 - 30;
+  let startY = 120;
+
+  for(let i=0;i<6;i++){
+    balls.push({
+      x: startX + i*22,
+      y: startY,
+      r: 10,
+      vx: 0,
+      vy: 0,
+      color: colors[i]
+    });
+  }
+}
+createBalls();
+
+canvas.addEventListener("mousemove", e=>{
+  const rect = canvas.getBoundingClientRect();
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
+});
+
+canvas.addEventListener("mousedown", ()=>{
+  if(Math.hypot(cueBall.vx, cueBall.vy) < 0.1){
+    shooting = true;
+  }
+});
+
+canvas.addEventListener("mouseup", ()=>{
+  if(shooting){
+    cueBall.vx = (cueBall.x - mouse.x) * 0.05;
+    cueBall.vy = (cueBall.y - mouse.y) * 0.05;
+    shooting = false;
+  }
+});
+
+function drawBall(ball){
+  // sombra
+  ctx.beginPath();
+  ctx.arc(ball.x+4, ball.y+6, ball.r, 0, Math.PI*2);
+  ctx.fillStyle = "rgba(0,0,0,0.35)";
+  ctx.fill();
+
+  // brilho
+  const g = ctx.createRadialGradient(
+    ball.x-4, ball.y-4, ball.r*0.2,
+    ball.x, ball.y, ball.r
+  );
+  g.addColorStop(0,"#fff");
+  g.addColorStop(0.3,ball.color);
+  g.addColorStop(1,"#000");
+
+  ctx.beginPath();
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
+  ctx.fillStyle = g;
+  ctx.fill();
+}
+
+function update(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  // mesa interna
+  ctx.strokeStyle = "#2b1b0f";
+  ctx.lineWidth = 20;
+  ctx.strokeRect(
+    table.left-10,
+    table.top-10,
+    table.right-table.left+20,
+    table.bottom-table.top+20
+  );
+
+  balls.forEach(ball=>{
+    ball.x += ball.vx;
+    ball.y += ball.vy;
+
+    ball.vx *= 0.99;
+    ball.vy *= 0.99;
+
+    if(ball.x-ball.r < table.left || ball.x+ball.r > table.right){
+      ball.vx *= -1;
+    }
+    if(ball.y-ball.r < table.top || ball.y+ball.r > table.bottom){
+      ball.vy *= -1;
+    }
+
+    drawBall(ball);
+  });
+
+  // mira
+  if(shooting){
+    ctx.setLineDash([8,8]);
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cueBall.x, cueBall.y);
+    ctx.lineTo(mouse.x, mouse.y);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+
+  requestAnimationFrame(update);
+}
+
+update();
+</script>
+
 </body>
 </html>
