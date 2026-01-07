@@ -41,10 +41,9 @@ const table = {
   bottom: canvas.height - 30
 };
 
-let pointer = { x: 0, y: 0 };
+let mouse = {x:0,y:0};
 let shooting = false;
-
-const balls = [];
+let turno = "player";
 
 const cueBall = {
   x: canvas.width / 2,
@@ -54,123 +53,139 @@ const cueBall = {
   vy: 0,
   color: "#ffffff"
 };
-balls.push(cueBall);
 
-// bolas alvo
-const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
-let startX = canvas.width / 2 - 55;
-let startY = 120;
+const balls = [cueBall];
 
-colors.forEach((c, i) => {
-  balls.push({
-    x: startX + i * 22,
-    y: startY,
-    r: 10,
-    vx: 0,
-    vy: 0,
-    color: c
-  });
-});
+function createBalls() {
+  const colors = ["#f00","#00f","#ff0","#f0f","#0ff","#fa0"];
+  let startX = canvas.width/2 - 30;
+  let startY = 120;
 
-// eventos touch + mouse
-function setPointer(e) {
+  for(let i=0;i<6;i++){
+    balls.push({
+      x: startX + i*22,
+      y: startY,
+      r: 10,
+      vx: 0,
+      vy: 0,
+      color: colors[i]
+    });
+  }
+}
+createBalls();
+
+canvas.addEventListener("mousemove", e=>{
   const rect = canvas.getBoundingClientRect();
-  const t = e.touches ? e.touches[0] : e;
-  pointer.x = t.clientX - rect.left;
-  pointer.y = t.clientY - rect.top;
-}
-
-canvas.addEventListener("mousedown", e => {
-  setPointer(e);
-  if (Math.hypot(cueBall.vx, cueBall.vy) < 0.05) shooting = true;
+  mouse.x = e.clientX - rect.left;
+  mouse.y = e.clientY - rect.top;
 });
 
-canvas.addEventListener("mousemove", setPointer);
-canvas.addEventListener("mouseup", () => shoot());
-
-canvas.addEventListener("touchstart", e => {
-  setPointer(e);
-  if (Math.hypot(cueBall.vx, cueBall.vy) < 0.05) shooting = true;
+canvas.addEventListener("mousedown", ()=>{
+  if(turno !== "player") return;
+  if(bolasParadas()){
+    shooting = true;
+  }
 });
 
-canvas.addEventListener("touchmove", setPointer);
-canvas.addEventListener("touchend", () => shoot());
+canvas.addEventListener("mouseup", ()=>{
+  if(shooting){
+    cueBall.vx = (cueBall.x - mouse.x) * 0.05;
+    cueBall.vy = (cueBall.y - mouse.y) * 0.05;
+    shooting = false;
+    turno = "ia";
+  }
+});
 
-function shoot() {
-  if (!shooting) return;
-  cueBall.vx = (cueBall.x - pointer.x) * 0.05;
-  cueBall.vy = (cueBall.y - pointer.y) * 0.05;
-  shooting = false;
+function bolasParadas(){
+  return balls.every(b => Math.hypot(b.vx, b.vy) < 0.1);
 }
 
-function drawBall(b) {
-  // sombra
+// ===== IA SIMPLES =====
+function iaPlay(){
+  let alvo = balls[Math.floor(Math.random()*(balls.length-1))+1];
+
+  const dx = cueBall.x - alvo.x;
+  const dy = cueBall.y - alvo.y;
+
+  cueBall.vx = dx * 0.04;
+  cueBall.vy = dy * 0.04;
+}
+
+// ===== DESENHO DA BOLA =====
+function drawBall(ball){
   ctx.beginPath();
-  ctx.arc(b.x + 3, b.y + 4, b.r, 0, Math.PI * 2);
+  ctx.arc(ball.x+4, ball.y+6, ball.r, 0, Math.PI*2);
   ctx.fillStyle = "rgba(0,0,0,0.35)";
   ctx.fill();
 
-  // brilho
   const g = ctx.createRadialGradient(
-    b.x - 4, b.y - 4, 2,
-    b.x, b.y, b.r
+    ball.x-4, ball.y-4, ball.r*0.2,
+    ball.x, ball.y, ball.r
   );
-  g.addColorStop(0, "#fff");
-  g.addColorStop(0.4, b.color);
-  g.addColorStop(1, "#000");
+  g.addColorStop(0,"#fff");
+  g.addColorStop(0.3,ball.color);
+  g.addColorStop(1,"#000");
 
   ctx.beginPath();
-  ctx.arc(b.x, b.y, b.r, 0, Math.PI * 2);
+  ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI*2);
   ctx.fillStyle = g;
   ctx.fill();
 }
 
-function update() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
+function update(){
+  ctx.clearRect(0,0,canvas.width,canvas.height);
 
-  // mesa
   ctx.strokeStyle = "#2b1b0f";
   ctx.lineWidth = 20;
   ctx.strokeRect(
-    table.left - 10,
-    table.top - 10,
-    table.right - table.left + 20,
-    table.bottom - table.top + 20
+    table.left-10,
+    table.top-10,
+    table.right-table.left+20,
+    table.bottom-table.top+20
   );
 
-  balls.forEach(b => {
-    b.x += b.vx;
-    b.y += b.vy;
+  balls.forEach(ball=>{
+    ball.x += ball.vx;
+    ball.y += ball.vy;
 
-    b.vx *= 0.98;
-    b.vy *= 0.98;
+    ball.vx *= 0.99;
+    ball.vy *= 0.99;
 
-    if (Math.abs(b.vx) < 0.01) b.vx = 0;
-    if (Math.abs(b.vy) < 0.01) b.vy = 0;
+    if(ball.x-ball.r < table.left || ball.x+ball.r > table.right){
+      ball.vx *= -1;
+    }
+    if(ball.y-ball.r < table.top || ball.y+ball.r > table.bottom){
+      ball.vy *= -1;
+    }
 
-    if (b.x - b.r < table.left || b.x + b.r > table.right) b.vx *= -1;
-    if (b.y - b.r < table.top || b.y + b.r > table.bottom) b.vy *= -1;
-
-    drawBall(b);
+    drawBall(ball);
   });
 
-  // mira
-  if (shooting) {
-    ctx.setLineDash([8, 8]);
-    ctx.strokeStyle = "rgba(255,255,255,0.6)";
+  if(shooting){
+    ctx.setLineDash([8,8]);
+    ctx.strokeStyle = "rgba(255,255,255,0.5)";
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.moveTo(cueBall.x, cueBall.y);
-    ctx.lineTo(pointer.x, pointer.y);
+    ctx.lineTo(mouse.x, mouse.y);
     ctx.stroke();
     ctx.setLineDash([]);
+  }
+
+  // TURNO DA IA
+  if(turno === "ia" && bolasParadas()){
+    setTimeout(()=>{
+      iaPlay();
+      turno = "player";
+    }, 600);
   }
 
   requestAnimationFrame(update);
 }
 
 update();
-</script>
+    </script>
+    
 
 </body>
 </html>
